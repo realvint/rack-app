@@ -1,24 +1,21 @@
-require_relative 'middleware/time_handler'
+require_relative 'services/time_handler'
 
 class App
   def call(env)
     request = Rack::Request.new(env)
 
-    if request.path == '/time' && !request.params['format'].nil?
-      responce = TimeHandler.new(request.params['format'])
-      body = [responce.result.join("\n").to_s]
-
-      if responce.success?
-        [200, headers, body]
-      else
-        [400, headers, body]
-      end
+    if request.params['format'].nil?
+      @response = Rack::Response.new('enter params', 200)
     else
-      [404, headers, ['Not Found']]
-    end
-  end
+      date_time = TimeHandler.new(request.params)
+      body = date_time.result
 
-  def headers
-    { 'Content-Type' => 'text/plain' }
+      @response = if date_time.success?
+                    Rack::Response.new(body, 200)
+                  else
+                    Rack::Response.new(body, 400)
+                  end
+    end
+    @response.finish
   end
 end
